@@ -1,0 +1,374 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API de Seleções e Classificação",
+    "version": "1.0.0",
+    "description": "API para gerenciamento de seleções, partidas e cálculo de tabelas de classificação de grupos."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3333",
+      "description": "Servidor Local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Seleções",
+      "description": "Endpoints relacionados ao gerenciamento, filtragem e classificação das seleções."
+    },
+    {
+      "name": "Partidas",
+      "description": "Endpoints relacionados à listagem, filtros por rodada e atualização de placares."
+    },
+    {
+      "name": "Artilharia",
+      "description": "Endpoints relacionados à artilharia"
+    }
+  ],
+  "paths": {
+    "/selecoes": {
+      "get": {
+        "tags": ["Seleções"],
+        "summary": "Retorna todas as seleções",
+        "description": "Retorna a lista completa de seleções cadastradas, ordenadas por grupo e por nome.",
+        "responses": {
+          "200": {
+            "description": "Lista de seleções retornada com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Selecao" }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao buscar seleções."
+          }
+        }
+      }
+    },
+    "/selecoes/grupo/{letra}": {
+      "get": {
+        "tags": ["Seleções"],
+        "summary": "Retorna seleções de um grupo específico",
+        "description": "Filtra e retorna as seleções com base na letra do grupo informada.",
+        "parameters": [
+          {
+            "name": "letra",
+            "in": "path",
+            "required": true,
+            "description": "Letra do grupo (ex: A, B, C)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de seleções do grupo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Selecao" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Grupo não encontrado."
+          },
+          "500": {
+            "description": "Erro interno ao buscar grupo."
+          }
+        }
+      }
+    },
+    "/selecoes/classificacao/{grupo}": {
+      "get": {
+        "tags": ["Seleções"],
+        "summary": "Calcula a classificação do grupo",
+        "description": "Processa os resultados das partidas e retorna a tabela ordenada por Pontos, Saldo e Gols Pró.",
+        "parameters": [
+          {
+            "name": "grupo",
+            "in": "path",
+            "required": true,
+            "description": "Letra do grupo para o cálculo da classificação",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tabela de classificação calculada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "grupo": { "type": "string", "example": "A" },
+                    "tabela": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/LinhaClassificacao" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Grupo não encontrado."
+          },
+          "500": {
+            "description": "Erro ao calcular a classificação."
+          }
+        }
+      }
+    },
+    "/partidas": {
+      "get": {
+        "tags": ["Partidas"],
+        "summary": "Retorna todas as partidas",
+        "description": "Retorna todas as partidas cadastradas incluindo os dados completos de mandante e visitante, ordenadas por rodada crescente.",
+        "responses": {
+          "200": {
+            "description": "Lista de partidas retornada com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Partida" }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao buscar partidas."
+          }
+        }
+      }
+    },
+    "/partidas/rodada/{numero}": {
+      "get": {
+        "tags": ["Partidas"],
+        "summary": "Retorna as partidas de uma rodada específica",
+        "description": "Filtra e retorna as partidas com base no número da rodada informado.",
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "path",
+            "required": true,
+            "description": "Número inteiro da rodada (ex: 1, 2, 3)",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de partidas da rodada retornada com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Partida" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Número da rodada inválido."
+          },
+          "500": {
+            "description": "Erro interno ao buscar partidas da rodada."
+          }
+        }
+      }
+    },
+    "/partidas/rodada/{numero}/grupo/{grupo}": {
+      "get": {
+        "tags": ["Partidas"],
+        "summary": "Retorna as partidas de uma rodada específicas de um grupo",
+        "description": "Filtra e retorna os confrontos de uma determinada rodada que pertencem exclusivamente ao grupo informado.",
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "path",
+            "required": true,
+            "description": "Número inteiro da rodada (ex: 1, 2, 3)",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "grupo",
+            "in": "path",
+            "required": true,
+            "description": "Letra do grupo (ex: A, B, G)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de partidas da rodada e grupo filtrados com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Partida" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Número da rodada inválido."
+          },
+          "404": {
+            "description": "Nenhum confronto encontrado para esta combinação de rodada e grupo."
+          },
+          "500": {
+            "description": "Erro interno ao buscar partidas por grupo e rodada."
+          }
+        }
+      }
+    },
+    "/partidas/{id}/resultado": {
+      "patch": {
+        "tags": ["Partidas"],
+        "summary": "Atualiza o placar de uma partida",
+        "description": "Atualiza a quantidade de gols do mandante e visitante, alterando o status da partida para realizada.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico da partida",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["golsMandante", "golsVisitante"],
+                "properties": {
+                  "golsMandante": { "type": "integer", "example": 2, "minimum": 0 },
+                  "golsVisitante": { "type": "integer", "example": 1, "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Placar updated com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PartidaSimplificada" }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados de entrada ou ID inválidos."
+          },
+          "404": {
+            "description": "Partida não encontrada (Erro Prisma P2025)."
+          },
+          "500": {
+            "description": "Erro interno ao atualizar o resultado."
+          }
+        }
+      }
+    },
+    "/artilharia": {
+      "get": {
+        "tags": ["Artilharia"],
+        "summary": "Retorna a artilharia por seleções",
+        "description": "Retorna o ranking das seleções que mais marcaram gols no campeonato, somando os gols feitos como mandante e visitante, ordenados de forma decrescente.",
+        "responses": {
+          "200": {
+            "description": "Ranking de artilharia retornado com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "nome": { "type": "string", "example": "Brasil" },
+                      "grupo": { "type": "string", "example": "G" },
+                      "totalGols": { "type": "integer", "example": 12 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao buscar a artilharia."
+          }
+        }
+      }
+    }  
+  },
+  "components": {
+    "schemas": {
+      "Selecao": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "nome": { "type": "string", "example": "Brasil" },
+          "sigla": { "type": "string", "example": "BRA" },
+          "bandeira": { "type": "string", "example": "https://flagcdn.com/br.svg" },
+          "grupo": { "type": "string", "example": "G" }
+        }
+      },
+      "Partida": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 12 },
+          "mandanteId": { "type": "integer", "example": 1 },
+          "visitanteId": { "type": "integer", "example": 2 },
+          "golsMandante": { "type": "integer", "example": 2 },
+          "golsVisitante": { "type": "integer", "example": 0 },
+          "fase": { "type": "string", "example": "Fase de Grupos" },
+          "rodada": { "type": "integer", "example": 1 },
+          "realizada": { "type": "boolean", "example": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "mandante": { "$ref": "#/components/schemas/Selecao" },
+          "visitante": { "$ref": "#/components/schemas/Selecao" }
+        }
+      },
+      "PartidaSimplificada": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 12 },
+          "mandanteId": { "type": "integer", "example": 1 },
+          "visitanteId": { "type": "integer", "example": 2 },
+          "golsMandante": { "type": "integer", "example": 2 },
+          "golsVisitante": { "type": "integer", "example": 0 },
+          "fase": { "type": "string", "example": "Fase de Grupos" },
+          "rodada": { "type": "integer", "example": 1 },
+          "realizada": { "type": "boolean", "example": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LinhaClassificacao": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "nome": { "type": "string", "example": "Brasil" },
+          "sigla": { "type": "string", "example": "BRA" },
+          "bandeira": { "type": "string", "example": "https://flagcdn.com/br.svg" },
+          "pontos": { "type": "integer", "example": 7 },
+          "jogos": { "type": "integer", "example": 3 },
+          "vitorias": { "type": "integer", "example": 2 },
+          "empates": { "type": "integer", "example": 1 },
+          "derrotas": { "type": "integer", "example": 0 },
+          "golsPro": { "type": "integer", "example": 5 },
+          "golsContra": { "type": "integer", "example": 1 },
+          "saldoGols": { "type": "integer", "example": 4 }
+        }
+      }
+    }
+  }
+}
